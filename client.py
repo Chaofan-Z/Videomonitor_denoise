@@ -56,8 +56,6 @@ while True:
         vsock.vsend(frame)
     except:
         a = 1
-    cv2.imwrite("image2.jpg",img)
-
     cv2.imshow("img",img)
     #保持画面的持续。
     k=cv2.waitKey(1)
