@@ -1,39 +1,71 @@
 # -*- coding=utf8 -*-
-"""
-# Author: zhengchaofan
-# Created Time : Thu Apr 25 13:44:25 2019
-# File Name: test.py
-# Description:
-"""
-import os
-import json
+
 import numpy as np
-import pandas as pd
-import tkinter
+import cv2
+import time
+import socket
+from threading import Thread
 import tkinter as tk
+import io
+from PIL import Image
 
-class Application(tk.Frame):
-    def __init__(self, master=None):
-        super().__init__(master)
-        self.master = master
-        self.pack()
-        self.create_widgets()
+import videosocket
+from videofeed import VideoFeed
+from config import *
 
-# zcf 
-    def create_widgets(self):
-        self.hi_there = tk.Button(self)
-		#zcf
-        self.hi_there["text"] = "Hello World\n(click me)"
-        self.hi_there["command"] = self.say_hi
-        self.hi_there.pack(side="top")
+def rescale_frame(frame, percent = 75):
+    scale_percent = percent
+    width = (int)(frame.shape[1] * scale_percent / 100)
+    height = (int)(frame.shape[0] * scale_percent / 100)
+    dim = (width, height)
+    return cv2.resize(frame, dim, interpolation = cv2.INTER_AREA)
 
-        self.quit = tk.Button(self, text="QUIT", fg="red",
-                              command=self.master.destroy)
-        self.quit.pack(side="bottom")
 
-    def say_hi(self):
-        print("hi there, everyone!")
+def getframebyte(frame):
+    pil_im = Image.fromarray(frame)
+    b = io.BytesIO()
+    pil_im.save(b, 'jpeg')
+    im_bytes = b.getvalue()
+    return im_bytes
 
-root = tk.Tk()
-app = Application(master=root)
-app.mainloop()
+socket = socket.socket()
+socket.settimeout(5)
+buffer_size = 2048
+vsock = videosocket.VideoSocket(socket)
+server_port = 50000
+server_ip = "127.0.0.1"
+try :
+    socket.connect(server_ip, server_port)
+except :
+    print("socket connect error")
+
+
+cap = cv2.VideoCapture(0)
+while True:
+    #从摄像头读取图片
+    sucess,img=cap.read()
+    img = rescale_frame(img,percent = 50)
+    cv2_im = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    frame = getframebyte(img)
+    try:
+        vsock.vsend(frame)
+    except:
+        a = 1
+    cv2.imwrite("image2.jpg",img)
+
+    cv2.imshow("img",img)
+    #保持画面的持续。
+    k=cv2.waitKey(1)
+    if k == 27:
+        #通过esc键退出摄像
+        cv2.destroyAllWindows()
+        break
+    elif k==ord("s"):
+        #通过s键保存图片，并退出。
+        cv2.imwrite("image2.jpg",img)
+        cv2.destroyAllWindows()
+        break
+
+
+#关闭摄像头
