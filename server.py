@@ -54,7 +54,7 @@ class Server(object):
         vsock = videosocket.VideoSocket(client)
         while True:
             frame_bytes = vsock.vreceive()
-            self.set_frame(frame_bytes,video_writer) #client端为什么不需要？
+            self.set_frame(frame_bytes, video_writer) #client端为什么不需要？
 
         video_writer.release()
 
@@ -62,6 +62,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='run the client.')
     parser.add_argument('-i', '--host', type=str, default='127.0.0.1', help='the server ip')
     parser.add_argument('-p', '--port', type=int, default='50000', help='the server port')
+    #TODO 根据路径创建output文件夹
     parser.add_argument('-o', '--outpath', type=str, default='./out/output.mp4', help='the output file path')
     args = parser.parse_args()
     print('args:',args)
