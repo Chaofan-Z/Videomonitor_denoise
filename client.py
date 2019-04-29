@@ -1,73 +1,72 @@
 # -*- coding=utf8 -*-
-
 import numpy as np
 import cv2
 import time
 import socket
-from threading import Thread
 import tkinter as tk
 import io
 from PIL import Image
 
 import videosocket
-from videofeed import VideoFeed
+#from videofeed import VideoFeed
 from config import *
+import argparse
 
-def rescale_frame(frame, percent = 75):
-    scale_percent = percent
-    width = (int)(frame.shape[1] * scale_percent / 100)
-    height = (int)(frame.shape[0] * scale_percent / 100)
-    dim = (width, height)
-    return cv2.resize(frame, dim, interpolation = cv2.INTER_AREA)
+class Client(object):
+    def __init__(self,args):
+        self.socket = socket.socket()
+        self.socket.settimeout(1)
+        self.vsock = videosocket.VideoSocket(self.socket)
+        self.server_ip = args.ip
+        self.server_port = args.port
 
+    def getframebyte(self, frame):
+        pil_im = Image.fromarray(frame)
+        b = io.BytesIO()
+        pil_im.save(b, 'jpeg')
+        im_bytes = b.getvalue()
+        return im_bytes
 
-def getframebyte(frame):
-    pil_im = Image.fromarray(frame)
-    b = io.BytesIO()
-    pil_im.save(b, 'jpeg')
-    im_bytes = b.getvalue()
-    return im_bytes
+    def run(self):
+        try :
+            self.socket.connect((self.server_ip, self.server_port))
+        except :
+            print("socket connect error")
 
-socket = socket.socket()
-socket.settimeout(1)
-buffer_size = 2048
-vsock = videosocket.VideoSocket(socket)
+        cap = cv2.VideoCapture(0)
+        while True:
+            #从摄像头读取图片
+            sucess, img=cap.read()
+            img = cv2.resize(img, (640, 480), interpolation=cv2.INTER_AREA)
+            cv2_im = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            frame = self.getframebyte(img)
+            
+            #TODO 以下代码有时会出错
+            try:
+                self.vsock.vsend(frame)
+            except:
+                print("frame send error")
+            cv2.imshow("client-img",img)
+            #保持画面的持续。
+            k=cv2.waitKey(1)
+            if k == 27:
+                #通过esc键退出摄像
+                self.socket.shutdown(socket.SHUT_RDWR)
+                cv2.destroyAllWindows()
+                break
+            # elif k==ord("s"):
+            #     #通过s键保存图片，并退出。
+            #     cv2.imwrite("image2.jpg",img)
+            #     cv2.destroyAllWindows()
+            #     break
+        cap.release()
+        #关闭摄像头
 
-server_port = 50000
-server_ip = "172.19.174.14"
-server_ip = "127.0.0.1"
-
-
-try :
-    socket.connect((server_ip, server_port))
-except :
-    print("socket connect error")
-
-
-cap = cv2.VideoCapture(0)
-while True:
-    #从摄像头读取图片
-    sucess,img=cap.read()
-    img = rescale_frame(img,percent = 50)
-    cv2_im = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-    frame = getframebyte(img)
-    try:
-        vsock.vsend(frame)
-    except:
-        a = 1
-    cv2.imshow("img",img)
-    #保持画面的持续。
-    k=cv2.waitKey(1)
-    if k == 27:
-        #通过esc键退出摄像
-        cv2.destroyAllWindows()
-        break
-    elif k==ord("s"):
-        #通过s键保存图片，并退出。
-        cv2.imwrite("image2.jpg",img)
-        cv2.destroyAllWindows()
-        break
-
-
-#关闭摄像头
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='run the client.')
+    parser.add_argument('-i', '--ip', type=str, default='127.0.0.1', help='the server ip')
+    parser.add_argument('-p', '--port', type=int, default='50000', help='the server port')
+    args = parser.parse_args()
+    print('args:',args)
+    client = Client(args)
+    client.run()
