@@ -40,13 +40,19 @@ class Client(object):
             img = cv2.resize(img, (640, 480), interpolation=cv2.INTER_AREA)
             cv2_im = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             frame = self.getframebyte(img)
-            
+
+            # 传输给server降噪后的
+            denoise_img = cv2.fastNlMeansDenoisingColored(img)
+            denosie_frame = self.getframebyte(denoise_img)
+
             #TODO 以下代码有时会出错
             try:
-                self.vsock.vsend(frame)
+                self.vsock.vsend(denosie_frame)
             except:
                 print("frame send error")
+
             cv2.imshow("client-img",img)
+
             #保持画面的持续。
             k=cv2.waitKey(1)
             if k == 27:
