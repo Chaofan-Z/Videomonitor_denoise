@@ -14,6 +14,8 @@ from config import *
 import argparse
 import videofeed
 import videosocket
+from matplotlib import pyplot as plt
+
 
 FPS = 10.0
 MAX_CILENT = 10
@@ -23,6 +25,9 @@ class Server(object):
         self.server = socket.socket()
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server.bind((args.host, args.port))
+        self.startframe = 0
+        self.endframe = 0
+
 
     @staticmethod
     def set_frame(frame_bytes, video_writer):
@@ -83,6 +88,9 @@ class Server(object):
             if i > endframe or not success:
                 break
 
+        self.startframe = startframe
+        self.endframe = endframe
+
         video_writer.release()
 
     def denoise(self, inputvideo, outputvideo):
@@ -100,10 +108,47 @@ class Server(object):
         while True:
             success, frame = videoCapture.read()
             if success:
-                denoise_img = cv2.fastNlMeansDenoisingColored(frame)
+                denoise_img = cv2.fastNlMeansDenoisingColored(frame, None, 5, 5, 7, 21)
                 video_writer.write(denoise_img)
             else :
                 break
+
+        video_writer.release()
+        ed = time.time()
+        print("use ", ed - st, "s")
+
+    def denoise2(self, inputvideo, outputvideo):
+        print("start to denoise2")
+        st = time.time()
+        videoCapture = cv2.VideoCapture(inputvideo)  # 从文件读取视频
+        FPS = videoCapture.get(cv2.CAP_PROP_FPS)  # 获取原视频的帧率
+        SIZE = (int(videoCapture.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                int(videoCapture.get(cv2.CAP_PROP_FRAME_HEIGHT)))  # 获取原视频帧的大小
+
+        fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+        video_writer = cv2.VideoWriter()
+        video_writer.open(outputvideo, fourcc, fps=FPS, frameSize=SIZE)
+
+        img = []
+        while True:
+            success, frame = videoCapture.read()
+            if success:
+                img.append(frame)
+            else:
+                break
+
+        dst = []
+        for i in range(2, len(img) - 2):
+            print(i)
+            dst.append(cv2.fastNlMeansDenoisingMulti(img, i, 5, None, 4, 7, 35))
+
+        # dst = cv2.fastNlMeansDenoisingMulti(img, 2, 5, None, 4, 7, 35)
+        # plt.subplot(121),plt.imshow(dst)
+        # plt.subplot(122),plt.imshow(img[2])
+        # plt.show()
+
+        for singleimg in dst:
+            video_writer.write(singleimg)
 
         video_writer.release()
         ed = time.time()
@@ -120,6 +165,7 @@ if __name__ == '__main__':
     server = Server(args)
 
     # server.run()
-    server.splitvideo('./out/output.mp4', 0, 5, './outsplit/output.mp4')
-    server.denoise('./outsplit/output.mp4', './outdenoise/output.mp4')
+    server.splitvideo('./out/output.mp4', 10, 13, './outsplit/output.mp4')
+    # server.denoise('./outsplit/output.mp4', './outdenoise/output.mp4')
+    server.denoise2('./outsplit/output.mp4', './outdenoise/output2.mp4')
 
