@@ -42,12 +42,12 @@ class Client(object):
             frame = self.getframebyte(img)
 
             # 传输给server降噪后的
-            denoise_img = cv2.fastNlMeansDenoisingColored(img)
-            denosie_frame = self.getframebyte(denoise_img)
+            # denoise_img = cv2.fastNlMeansDenoisingColored(img)
+            # denosie_frame = self.getframebyte(denoise_img)
 
             #TODO 以下代码有时会出错
             try:
-                self.vsock.vsend(denosie_frame)
+                self.vsock.vsend(frame)
             except:
                 print("frame send error")
 

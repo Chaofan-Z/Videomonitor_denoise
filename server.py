@@ -15,7 +15,7 @@ import argparse
 import videofeed
 import videosocket
 
-FPS = 15.0
+FPS = 10.0
 MAX_CILENT = 10
 
 class Server(object):
@@ -58,6 +58,57 @@ class Server(object):
 
         video_writer.release()
 
+    def splitvideo(self, inputvideo, st, ed, outputvideo):
+        videoCapture = cv2.VideoCapture(inputvideo)  # 从文件读取视频
+        FPS = videoCapture.get(cv2.CAP_PROP_FPS)  # 获取原视频的帧率
+        SIZE = (int(videoCapture.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                int(videoCapture.get(cv2.CAP_PROP_FRAME_HEIGHT)))  # 获取原视频帧的大小
+        print(FPS, SIZE)
+
+        fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+        video_writer = cv2.VideoWriter()
+        video_writer.open(outputvideo, fourcc, fps=FPS, frameSize=SIZE)
+
+        startframe = int(st * FPS)
+        endframe = int(ed * FPS)
+        print("startframe:", startframe, "endframe:", endframe)
+
+        i = 0
+        while True:
+            success, frame = videoCapture.read()
+            if success:
+                i += 1
+                if i >= startframe and i <= endframe:
+                    video_writer.write(frame)
+            if i > endframe or not success:
+                break
+
+        video_writer.release()
+
+    def denoise(self, inputvideo, outputvideo):
+        print("start to denoise")
+        st = time.time()
+        videoCapture = cv2.VideoCapture(inputvideo)  # 从文件读取视频
+        FPS = videoCapture.get(cv2.CAP_PROP_FPS)  # 获取原视频的帧率
+        SIZE = (int(videoCapture.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                int(videoCapture.get(cv2.CAP_PROP_FRAME_HEIGHT)))  # 获取原视频帧的大小
+
+        fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+        video_writer = cv2.VideoWriter()
+        video_writer.open(outputvideo, fourcc, fps=FPS, frameSize=SIZE)
+
+        while True:
+            success, frame = videoCapture.read()
+            if success:
+                denoise_img = cv2.fastNlMeansDenoisingColored(frame)
+                video_writer.write(denoise_img)
+            else :
+                break
+
+        video_writer.release()
+        ed = time.time()
+        print("use ", ed - st, "s")
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='run the client.')
     parser.add_argument('-i', '--host', type=str, default='127.0.0.1', help='the server ip')
@@ -67,6 +118,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print('args:',args)
     server = Server(args)
-    server.run()
 
+    # server.run()
+    server.splitvideo('./out/output.mp4', 0, 5, './outsplit/output.mp4')
+    server.denoise('./outsplit/output.mp4', './outdenoise/output.mp4')
 
