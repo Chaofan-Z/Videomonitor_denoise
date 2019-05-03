@@ -21,12 +21,13 @@ FPS = 10.0
 MAX_CILENT = 10
 
 class Server(object):
-    def __init__(self, args):
+    def __init__(self, host = '127.0.0.1', port = 50000, outpath = './out/output.mp4'):
         self.server = socket.socket()
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.server.bind((args.host, args.port))
+        self.server.bind((str(host), int(port)))
         self.startframe = 0
         self.endframe = 0
+        self.outpath = outpath
 
 
     @staticmethod
@@ -55,7 +56,7 @@ class Server(object):
     def show_video(self, client):
         fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
         video_writer = cv2.VideoWriter()
-        video_writer.open(args.outpath, fourcc, fps=FPS, frameSize=(640,480))
+        video_writer.open(self.outpath, fourcc, fps=FPS, frameSize=(640,480))
         vsock = videosocket.VideoSocket(client)
         while True:
             frame_bytes = vsock.vreceive()
@@ -142,11 +143,6 @@ class Server(object):
             print(i)
             dst.append(cv2.fastNlMeansDenoisingMulti(img, i, 5, None, 4, 7, 35))
 
-        # dst = cv2.fastNlMeansDenoisingMulti(img, 2, 5, None, 4, 7, 35)
-        # plt.subplot(121),plt.imshow(dst)
-        # plt.subplot(122),plt.imshow(img[2])
-        # plt.show()
-
         for singleimg in dst:
             video_writer.write(singleimg)
 
@@ -155,17 +151,21 @@ class Server(object):
         print("use ", ed - st, "s")
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='run the client.')
-    parser.add_argument('-i', '--host', type=str, default='127.0.0.1', help='the server ip')
-    parser.add_argument('-p', '--port', type=int, default='50000', help='the server port')
-    #TODO 根据路径创建output文件夹
-    parser.add_argument('-o', '--outpath', type=str, default='./out/output.mp4', help='the output file path')
-    args = parser.parse_args()
-    print('args:',args)
-    server = Server(args)
+    # parser = argparse.ArgumentParser(description='run the client.')
+    # parser.add_argument('-i', '--host', type=str, default='127.0.0.1', help='the server ip')
+    # parser.add_argument('-p', '--port', type=int, default='50000', help='the server port')
+    # #TODO 根据路径创建output文件夹
+    # parser.add_argument('-o', '--outpath', type=str, default='./out/output.mp4', help='the output file path')
+    # args = parser.parse_args()
+    # print('args:',args)
 
-    # server.run()
-    server.splitvideo('./out/output.mp4', 10, 13, './outsplit/output.mp4')
-    # server.denoise('./outsplit/output.mp4', './outdenoise/output.mp4')
-    server.denoise2('./outsplit/output.mp4', './outdenoise/output2.mp4')
+    host = '127.0.0.1'
+    port = '50000'
+    outpath = './out/output.mp4'
+    server = Server(host, port, outpath)
+
+    server.run()
+    # server.splitvideo('./out/output.mp4', 10, 13, './outsplit/output.mp4')
+    # # server.denoise('./outsplit/output.mp4', './outdenoise/output.mp4')
+    # server.denoise2('./outsplit/output.mp4', './outdenoise/output2.mp4')
 

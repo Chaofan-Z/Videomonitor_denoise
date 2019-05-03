@@ -13,12 +13,12 @@ from config import *
 import argparse
 
 class Client(object):
-    def __init__(self,args):
+    def __init__(self, ip = "127.0.0.1", port = 50000):
         self.socket = socket.socket()
         self.socket.settimeout(1)
         self.vsock = videosocket.VideoSocket(self.socket)
-        self.server_ip = args.ip
-        self.server_port = args.port
+        self.server_ip = str(ip)
+        self.server_port = int(port)
 
     def getframebyte(self, frame):
         pil_im = Image.fromarray(frame)
@@ -69,10 +69,12 @@ class Client(object):
         #关闭摄像头
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='run the client.')
-    parser.add_argument('-i', '--ip', type=str, default='127.0.0.1', help='the server ip')
-    parser.add_argument('-p', '--port', type=int, default='50000', help='the server port')
-    args = parser.parse_args()
-    print('args:',args)
-    client = Client(args)
+    # parser = argparse.ArgumentParser(description='run the client.')
+    # parser.add_argument('-i', '--ip', type=str, default='127.0.0.1', help='the server ip')
+    # parser.add_argument('-p', '--port', type=int, default='50000', help='the server port')
+    # args = parser.parse_args()
+    # print('args:',args)
+    ip = "127.0.0.1"
+    port = 50000
+    client = Client(ip, port)
     client.run()
