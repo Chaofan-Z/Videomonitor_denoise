@@ -134,20 +134,20 @@ def close():
 if __name__ == '__main__':
     # 主窗口
     root = tkinter.Tk()
-    root.title("The Client of Video Monitors ")  #
+    root.title("C/S监控系统客户端")  #
     # root.geometry('600x450')
     root.resizable(0, 0)
     # 标题
     label2 = tkinter.Label(root, text = " IP ", relief="ridge", width=5, height=1, bg="beige")
-    label3 = tkinter.Label(root, text = "PORT", relief="ridge", width=5, height=1, bg="beige")
+    label3 = tkinter.Label(root, text = "端口", relief="ridge", width=5, height=1, bg="beige")
 
     #连接按钮
-    button1 = tkinter.Button(root, text="connect", command=connect, width=8, height=2, relief="raised")
+    button1 = tkinter.Button(root, text="连接", command=connect, width=8, height=2, relief="raised")
 
     #ip和port输入窗口
     ip_entry = tkinter.Entry(root, relief="ridge", width=20)
     # ip_entry.insert(0, "172.19.77.240")
-    ip_entry.insert(0, "172.19.77.240")
+    ip_entry.insert(0, "127.0.0.1")
     port_entry = tkinter.Entry(root, relief="ridge", width=20)
     port_entry.insert(0, "50000")
 
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     port_entry.grid(row=2, column=2)
     button1.grid(row=1, column=3, sticky='w')
 
-    button2 = tkinter.Button(root, text="quit", command=client.onClose,  width=8, height=2, relief="raised")
+    button2 = tkinter.Button(root, text="退出", command=client.onClose,  width=8, height=2, relief="raised")
 
     button2.grid(row=2, column=3, sticky='w')
     root.mainloop()
